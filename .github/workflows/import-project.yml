@@ -1,0 +1,32 @@
+name: Import initial project
+on:
+  push:
+    paths: [project-source.zip]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract reviewed source archive
+        run: |
+          python - <<'PY'
+          import pathlib, zipfile
+          roots = {'lib','test','android','windows','assets','scripts','docs','packaging','README.md','pubspec.yaml','pubspec.lock','analysis_options.yaml','.metadata','.gitignore'}
+          with zipfile.ZipFile('project-source.zip') as z:
+              for f in z.infolist():
+                  p = pathlib.PurePosixPath(f.filename)
+                  if p.is_absolute() or '..' in p.parts or not p.parts or p.parts[0] not in roots:
+                      raise SystemExit('Unexpected archive path')
+                  if set(p.parts) & {'build','.gradle','ephemeral','.git','.dart_tool','__pycache__'} or p.name in {'local.properties','key.properties'} or p.suffix in {'.keystore','.jks','.apk','.aab'}:
+                      raise SystemExit('Private or generated file in archive')
+              z.extractall('.')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm project-source.zip
+          git add lib test android windows assets scripts docs packaging README.md pubspec.yaml pubspec.lock analysis_options.yaml .metadata .gitignore
+          git commit -m "Import reviewed GW Totem source with release updater"
+          git push
