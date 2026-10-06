@@ -1,14 +1,25 @@
 # Gour-net Kiosk en Windows
 
+## Instalar en el PC del local (sin programar)
+
+1. Usa un PC con Windows 10/11 **x64**. No necesita Flutter ni Visual Studio para ejecutar la app.
+2. Instala el [Microsoft Visual C++ Redistributable x64 oficial](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist). Es una dependencia del programa, distinta de Visual Studio; debe estar presente antes de abrir la app.
+3. Abre [Releases de GW-Totem-s](https://github.com/Corredora-Online/GW-Totem-s/releases) y descarga **gournet-kiosk-windows-x64-setup.exe**, no los enlaces automáticos Source code.
+4. Ejecuta el Setup desde la cuenta Windows que usará el kiosko. Se instala en `%LOCALAPPDATA%\Programs\GournetKiosk` y crea accesos directos. No requiere copiar DLL a mano.
+5. Abre Gour-net Kiosk, comparte el código con soporte, selecciona la sucursal y configura POS/impresora según la sección siguiente.
+
+Las siguientes versiones se reciben mediante Releases, conservando los datos del perfil. Consulta [actualizaciones y firma](updates.md). El instalador Windows aún no lleva firma Authenticode; no desactives protecciones si una política corporativa bloquea su ejecución: solicita a soporte su validación.
+
 ## Estado y requisitos
 
 El mismo proyecto Flutter ya incluye runner Windows, activación por código,
 catálogo/cache local, checkout/API y auditoría. Esta adaptación agrega transporte
 Getnet IM30 por puerto COM, impresión térmica ESC/POS por la cola RAW de Windows,
-video de espera y pantalla completa. La compilación y el hardware Windows **aún
-deben probarse en un PC Windows real**; desarrollar en macOS no produce un `.exe`.
+video de espera y pantalla completa. La compilación nativa Windows y el Setup
+se verifican en GitHub Actions. El POS, la impresión y el reemplazo automático
+**aún deben probarse en un PC Windows real**; macOS no compila el `.exe` localmente.
 
-Se necesita Windows 10/11 de 64 bits, Flutter con soporte desktop Windows y
+Para desarrollar/compilar manualmente se necesita Windows 10/11 de 64 bits, Flutter con soporte desktop Windows y
 Visual Studio con la carga **Desktop development with C++**. Comprueba
 `flutter doctor -v` en Windows. Para reproducción del MP4, Windows debe contar
 con el códec requerido por Media Foundation. Para pagos, Getnet/PAX debe instalar
@@ -92,6 +103,8 @@ ajustes, actualizaciones y acceso físico según tu despliegue. No ejecutes la
 cuenta pública con privilegios de administrador.
 
 ## Datos y actualizaciones
+
+Para instalaciones mediante Setup usa el actualizador de [GitHub Releases](updates.md). Las instrucciones de reemplazo manual siguientes sólo corresponden al paquete portátil.
 
 La API Key y PIN se guardan con `flutter_secure_storage`; catálogo, imágenes,
 pedidos pendientes y auditoría se guardan en el directorio de soporte de la
