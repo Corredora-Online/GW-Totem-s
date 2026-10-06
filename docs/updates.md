@@ -16,6 +16,12 @@ Tags aceptados: `vM.m.p`, números 0..999. El código interno es `M*1000000+m*10
 
 ## Firma Android: configuración inicial obligatoria
 
+Se eligió una **firma de producción nueva para equipos nuevos**. El script `python3 scripts/provision_android_signing.py` la genera una sola vez en `.signing/`, carpeta excluida de Git. Respalda esa carpeta en un almacén seguro: perderla impide actualizar instalaciones firmadas con ella. Nunca la publiques ni la adjuntes a un issue.
+
+Con [GitHub CLI](https://cli.github.com/) instalado y autenticado personalmente mediante `gh auth login`, ejecuta `python3 scripts/provision_android_signing.py --upload`. Envía los cuatro secretos únicamente a GW-Totem-s por stdin (no imprime contraseñas ni las pone en argumentos). No modifica otros repositorios. No ejecutes el upload desde un runner público.
+
+**Los SUNMI antiguos no aceptarán esta firma nueva sobre su instalación existente.** No se han desinstalado ni borrado sus datos. Su migración requiere un procedimiento separado de respaldo/reaprovisionamiento. La primera Release de producción se destina a equipos nuevos.
+
 La actualización debe conservar **exactamente la misma clave privada** que firmó la instalación existente. Las compilaciones locales históricas usan el debug keystore de la Mac; no generes otro para actualizar esos dispositivos. Para una flota nueva conviene una firma de producción y migración controlada.
 
 En **Settings → Secrets and variables → Actions → Repository secrets** configura:

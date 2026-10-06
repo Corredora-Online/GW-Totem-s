@@ -5,7 +5,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 ROOTS = ['lib', 'test', 'android', 'windows', 'assets', 'scripts', 'docs', 'packaging', 'README.md', 'pubspec.yaml', 'pubspec.lock', 'analysis_options.yaml', '.metadata', '.gitignore']
-SKIP_PARTS = {'build', '.gradle', 'ephemeral', '.git', '.dart_tool', '__pycache__', '.cxx'}
+SKIP_PARTS = {'build', '.gradle', 'ephemeral', '.git', '.dart_tool', '__pycache__', '.cxx', '.signing'}
 SKIP_NAMES = {'local.properties', 'key.properties', '.DS_Store', 'GeneratedPluginRegistrant.java'}
 SKIP_SUFFIXES = {'.keystore', '.jks', '.apk', '.aab', '.iml', '.log', '.zip', '.pyc'}
 SECRET = re.compile(rb'gw_live_[A-Za-z0-9_.-]{20,}|ghp_[A-Za-z0-9]{25,}|github_pat_[A-Za-z0-9_]{25,}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----')

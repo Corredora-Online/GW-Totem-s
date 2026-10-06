@@ -62,3 +62,4 @@ app.*.map.json
 **/.gradle/
 **/ephemeral/
 dist/
+.signing/
