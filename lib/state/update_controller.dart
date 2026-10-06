@@ -102,8 +102,9 @@ class UpdateController extends StateNotifier<UpdateState> {
       final installed = await _channel
           .invokeMethod<bool>('installUpdate', {'path': file.path})
           .timeout(const Duration(minutes: 3));
-      if (installed != true)
+      if (installed != true) {
         throw StateError('El instalador no confirmó la solicitud');
+      }
       // Native installers restart the process. Keep touches locked until then.
       state = const UpdateState(
         busy: true,
