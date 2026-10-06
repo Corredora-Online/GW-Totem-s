@@ -87,7 +87,9 @@ jobs:
           VERSION: ${{ needs.version.outputs.version }}
           BUILD: ${{ needs.version.outputs.build }}
         run: |
-          flutter build windows --release --build-name=$env:VERSION --build-number=$env:BUILD --dart-define=APP_VERSION=$env:VERSION --dart-define=APP_BUILD_NUMBER=$env:BUILD
+          # Windows VERSIONINFO components are 16-bit. The updater keeps the
+          # full cross-platform sequence in APP_BUILD_NUMBER, independently.
+          flutter build windows --release --build-name=$env:VERSION --build-number=0 --dart-define=APP_VERSION=$env:VERSION --dart-define=APP_BUILD_NUMBER=$env:BUILD
           if ($LASTEXITCODE -ne 0) { throw 'Windows build failed' }
           & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DAppVersion=$env:VERSION" packaging/windows/setup.iss
           if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed' }
