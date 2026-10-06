@@ -1,0 +1,46 @@
+{
+  "categories": [
+    {"id":"cafeteria","name":"Cafetería","sortOrder":1,"visible":true},
+    {"id":"panaderia","name":"Panadería","sortOrder":2,"visible":true},
+    {"id":"desayunos","name":"Desayunos","sortOrder":3,"visible":true},
+    {"id":"sandwiches","name":"Sándwiches","sortOrder":4,"visible":true},
+    {"id":"hamburguesas","name":"Hamburguesas","sortOrder":5,"visible":true},
+    {"id":"ensaladas","name":"Ensaladas","sortOrder":6,"visible":true},
+    {"id":"pizzas","name":"Pizzas","sortOrder":7,"visible":true},
+    {"id":"platos","name":"Platos","sortOrder":8,"visible":true},
+    {"id":"bebidas","name":"Bebidas","sortOrder":9,"visible":true},
+    {"id":"postres","name":"Postres","sortOrder":10,"visible":true}
+  ],
+  "products": [
+    {
+      "id":"espresso-doble","sku":"CAF-001","name":"Espresso doble","description":"Doble extracción de café arábica recién molido, de cuerpo intenso, aroma profundo y crema persistente. Servido en taza de porcelana.","price":2500,"categoryId":"cafeteria","image":"assets/images/products/espresso.png","available":true,"tags":["Vegano","Sin gluten"],
+      "modifierGroups":[{"id":"leche","name":"Tipo de leche","required":false,"minSelection":0,"maxSelection":1,"options":[{"id":"normal","name":"Normal"},{"id":"descremada","name":"Descremada"},{"id":"sin-lactosa","name":"Sin lactosa"},{"id":"vegetal","name":"Vegetal","priceAdjustment":500}]}]
+    },
+    {
+      "id":"cappuccino-clasico","sku":"CAF-002","name":"Cappuccino clásico","description":"Espresso, leche vaporizada y una capa sedosa de espuma, terminado con un toque de cacao. Equilibrado, cremoso y reconfortante.","price":3800,"categoryId":"cafeteria","image":"assets/images/products/cappuccino.png","available":true,"tags":["Vegetariano","Sin gluten"],
+      "modifierGroups":[{"id":"leche","name":"Tipo de leche","required":true,"minSelection":1,"maxSelection":1,"options":[{"id":"normal","name":"Normal"},{"id":"descremada","name":"Descremada"},{"id":"sin-lactosa","name":"Sin lactosa"},{"id":"vegetal","name":"Vegetal","priceAdjustment":500}]}]
+    },
+    {
+      "id":"latte-vainilla","sku":"CAF-003","name":"Latte helado de vainilla","description":"Café espresso sobre hielo, leche fría y vainilla natural. Una bebida suave, refrescante y ligeramente dulce.","price":4200,"categoryId":"cafeteria","image":"assets/images/products/iced-latte.png","available":true,"tags":["Vegetariano","Frío"],
+      "modifierGroups":[{"id":"leche","name":"Tipo de leche","required":true,"minSelection":1,"maxSelection":1,"options":[{"id":"normal","name":"Normal"},{"id":"sin-lactosa","name":"Sin lactosa"},{"id":"vegetal","name":"Vegetal","priceAdjustment":500}]}]
+    },
+    {"id":"croissant","sku":"PAN-001","name":"Croissant de mantequilla","description":"Croissant artesanal de masa laminada con mantequilla, horneado hasta quedar dorado, crujiente por fuera y aireado por dentro.","price":3200,"categoryId":"panaderia","image":"assets/images/products/croissant.png","available":true,"tags":["Vegetariano"],"modifierGroups":[]},
+    {"id":"roll-canela","sku":"PAN-002","name":"Roll de canela","description":"Masa suave enrollada con canela y azúcar rubia, cubierta con glaseado de vainilla. Horneado durante el día.","price":3500,"categoryId":"panaderia","image":"assets/images/products/cinnamon-roll.png","available":true,"tags":["Vegetariano"],"modifierGroups":[]},
+    {"id":"tostada-palta","sku":"DES-001","name":"Tostada de palta","description":"Pan de masa madre tostado, palta cremosa, tomates cherry, semillas tostadas y un toque de limón. Opción vegetariana.","price":5900,"categoryId":"desayunos","image":"assets/images/products/avocado-toast.png","available":true,"tags":["Vegano","Vegetariano"],"modifierGroups":[{"id":"preparacion","name":"Preparación","required":false,"minSelection":0,"maxSelection":1,"options":[{"id":"normal","name":"Normal"},{"id":"sin-tomate","name":"Sin tomate"},{"id":"sin-semillas","name":"Sin semillas"}]}]},
+    {"id":"sandwich-pollo","sku":"SAN-001","name":"Sándwich de pollo grillado","description":"Pechuga de pollo grillada, lechuga fresca, tomate y mayonesa de hierbas en pan ciabatta ligeramente tostado.","price":7490,"categoryId":"sandwiches","image":"assets/images/products/chicken-sandwich.png","available":true,"tags":["Sin lactosa"],"modifierGroups":[{"id":"preparacion","name":"Preparación","required":false,"minSelection":0,"maxSelection":1,"options":[{"id":"normal","name":"Normal"},{"id":"sin-tomate","name":"Sin tomate"},{"id":"sin-mayonesa","name":"Sin mayonesa"}]}]},
+    {
+      "id":"hamburguesa-clasica","sku":"HAM-001","name":"Hamburguesa clásica","description":"Hamburguesa de vacuno, queso cheddar, pepinillos, cebolla morada, lechuga y salsa de la casa en pan brioche.","price":8990,"categoryId":"hamburguesas","image":"assets/images/products/cheeseburger.png","available":true,"tags":["Favorito"],
+      "modifierGroups":[
+        {"id":"preparacion","name":"Personaliza tu pedido","required":true,"minSelection":1,"maxSelection":1,"options":[{"id":"normal","name":"Normal"},{"id":"sin-cebolla","name":"Sin cebolla"},{"id":"sin-pepinillo","name":"Sin pepinillo"}]},
+        {"id":"extras","name":"Extras","required":false,"minSelection":0,"maxSelection":2,"options":[{"id":"extra-queso","name":"Extra queso","priceAdjustment":900},{"id":"extra-carne","name":"Extra carne","priceAdjustment":2500}]}
+      ]
+    },
+    {"id":"ensalada-cesar","sku":"ENS-001","name":"Ensalada César con pollo","description":"Mix de hojas verdes, pollo grillado, tomates, queso, crutones y aderezo César preparado en casa.","price":7990,"categoryId":"ensaladas","image":"assets/images/products/chicken-salad.png","available":true,"tags":["Fresco"],"modifierGroups":[{"id":"preparacion","name":"Preparación","required":false,"minSelection":0,"maxSelection":1,"options":[{"id":"normal","name":"Normal"},{"id":"sin-crutones","name":"Sin crutones"},{"id":"aderezo-aparte","name":"Aderezo aparte"}]}]},
+    {"id":"pizza-margherita","sku":"PIZ-001","name":"Pizza Margherita","description":"Masa de fermentación lenta, salsa de tomates, mozzarella fresca, hojas de albahaca y aceite de oliva.","price":9990,"categoryId":"pizzas","image":"assets/images/products/pizza-margherita.png","available":true,"tags":["Vegetariano"],"modifierGroups":[{"id":"extras","name":"Extras","required":false,"minSelection":0,"maxSelection":2,"options":[{"id":"extra-queso","name":"Extra queso","priceAdjustment":900},{"id":"extra-albahaca","name":"Extra albahaca","priceAdjustment":500}]}]},
+    {"id":"pizza-pepperoni","sku":"PIZ-002","name":"Pizza pepperoni","description":"Masa de fermentación lenta, salsa de tomates, mozzarella y abundante pepperoni dorado al horno.","price":10990,"categoryId":"pizzas","image":"assets/images/products/pizza-pepperoni.png","available":true,"tags":["Picante suave"],"modifierGroups":[{"id":"extras","name":"Extras","required":false,"minSelection":0,"maxSelection":2,"options":[{"id":"extra-queso","name":"Extra queso","priceAdjustment":900},{"id":"extra-pepperoni","name":"Extra pepperoni","priceAdjustment":1200}]}]},
+    {"id":"pasta-bolognesa","sku":"PLA-001","name":"Pasta bolognesa","description":"Pasta al dente con salsa bolognesa cocinada lentamente, carne de vacuno, tomates, hierbas y queso rallado.","price":9490,"categoryId":"platos","image":"assets/images/products/pasta-bolognese.png","available":true,"tags":["Clásico"],"modifierGroups":[{"id":"preparacion","name":"Preparación","required":false,"minSelection":0,"maxSelection":1,"options":[{"id":"normal","name":"Normal"},{"id":"sin-queso","name":"Sin queso"}]}]},
+    {"id":"jugo-naranja","sku":"BEB-001","name":"Jugo de naranja natural","description":"Naranjas frescas exprimidas al momento, sin azúcar añadida ni conservantes. Servido bien frío.","price":3500,"categoryId":"bebidas","image":"assets/images/products/orange-juice.png","available":true,"tags":["Vegano","Sin azúcar"],"modifierGroups":[]},
+    {"id":"smoothie-frutos-rojos","sku":"BEB-002","name":"Smoothie de frutos rojos","description":"Frutillas, frambuesas, arándanos y plátano licuados con hielo. Cremoso, fresco y naturalmente dulce.","price":4500,"categoryId":"bebidas","image":"assets/images/products/berry-smoothie.png","available":true,"tags":["Vegano","Sin azúcar"],"modifierGroups":[]},
+    {"id":"torta-chocolate","sku":"POS-001","name":"Torta de chocolate","description":"Bizcocho húmedo de cacao en capas, relleno y cubierto con ganache de chocolate. Porción individual.","price":4200,"categoryId":"postres","image":"assets/images/products/chocolate-cake.png","available":true,"tags":["Vegetariano"],"modifierGroups":[]}
+  ]
+}

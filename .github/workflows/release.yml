@@ -1,0 +1,120 @@
+name: Build and publish release
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag (v1.0.1)
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: publish-release
+  cancel-in-progress: false
+jobs:
+  version:
+    if: github.event_name == 'workflow_dispatch' || !github.event.release.prerelease
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build: ${{ steps.version.outputs.build }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: version
+        env:
+          TAG: ${{ inputs.tag || github.event.release.tag_name }}
+        run: |
+          python scripts/release_manifest.py "$TAG" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+  build:
+    needs: version
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.version.outputs.tag }}
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.3'
+          channel: stable
+          cache: true
+      - run: flutter pub get --enforce-lockfile
+      - run: flutter analyze
+      - run: flutter test
+      - name: Restore Android signing key (never publish unsigned updates)
+        if: runner.os == 'Linux'
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          python - <<'PY'
+          import os, base64, pathlib
+          required = ['KEYSTORE', 'STORE_PASSWORD', 'KEY_ALIAS', 'KEY_PASSWORD']
+          if not all(os.environ.get(k) for k in required):
+              raise SystemExit('Configura los cuatro secretos ANDROID_* antes de publicar. Ver docs/updates.md.')
+          path = pathlib.Path(os.environ['RUNNER_TEMP']) / 'release.keystore'
+          path.write_bytes(base64.b64decode(os.environ['KEYSTORE'], validate=True))
+          def esc(s):
+              return s.replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '\\r').replace('=', '\\=').replace(':', '\\:').replace(' ', '\\ ')
+          values = dict(storeFile=str(path), storePassword=os.environ['STORE_PASSWORD'], keyAlias=os.environ['KEY_ALIAS'], keyPassword=os.environ['KEY_PASSWORD'])
+          pathlib.Path('android/key.properties').write_text('\n'.join(k+'='+esc(v) for k,v in values.items()))
+          PY
+      - if: runner.os == 'Linux'
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          BUILD: ${{ needs.version.outputs.build }}
+        run: |
+          flutter build apk --release --build-name="$VERSION" --build-number="$BUILD" --dart-define=APP_VERSION="$VERSION" --dart-define=APP_BUILD_NUMBER="$BUILD"
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk dist/gournet-kiosk-android.apk
+      - if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          BUILD: ${{ needs.version.outputs.build }}
+        run: |
+          flutter build windows --release --build-name=$env:VERSION --build-number=$env:BUILD --dart-define=APP_VERSION=$env:VERSION --dart-define=APP_BUILD_NUMBER=$env:BUILD
+          if ($LASTEXITCODE -ne 0) { throw 'Windows build failed' }
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DAppVersion=$env:VERSION" packaging/windows/setup.iss
+          if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed' }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ runner.os }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
+  publish:
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          path: dist
+          merge-multiple: true
+      - name: Publish complete immutable version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.version.outputs.tag }}
+        run: |
+          python scripts/release_manifest.py "$TAG" dist
+          # No --clobber: never replace an installer already offered to devices.
+          gh release upload "$TAG" dist/gournet-kiosk-android.apk dist/gournet-kiosk-windows-x64-setup.exe
+          gh release upload "$TAG" dist/update-manifest.json

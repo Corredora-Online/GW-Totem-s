@@ -1,0 +1,2 @@
+Managed installation: GournetKiosk per-user Inno Setup.
+Do not copy this marker into portable builds.
