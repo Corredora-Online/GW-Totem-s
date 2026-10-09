@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
+import 'core/widgets/adaptive_kiosk_viewport.dart';
 import 'core/widgets/idle_guard.dart';
 import 'data/remote/gournet_branches_repository.dart';
 import 'domain/models/branch.dart';
@@ -103,6 +105,10 @@ class _GournetKioskAppState extends ConsumerState<GournetKioskApp> {
         debugShowCheckedModeBanner: false,
         theme: AppTheme.withPrimary(primary),
         home: const OnboardingScreen(),
+        builder: (context, child) => AdaptiveKioskViewport(
+          enabled: Platform.isWindows,
+          child: child ?? const SizedBox(),
+        ),
       );
     }
 
@@ -114,7 +120,10 @@ class _GournetKioskAppState extends ConsumerState<GournetKioskApp> {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.withPrimary(primary),
       routerConfig: appRouter,
-      builder: (context, child) => IdleGuard(child: child ?? const SizedBox()),
+      builder: (context, child) => AdaptiveKioskViewport(
+        enabled: Platform.isWindows,
+        child: IdleGuard(child: child ?? const SizedBox()),
+      ),
     );
   }
 

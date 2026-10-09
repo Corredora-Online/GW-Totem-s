@@ -258,7 +258,10 @@ Map PrintReceipt(const Value* args) {
   bytes.append("\x1D\x21\x00\n\x1B\x61\x00", 7);
   bytes += OemText(body);
   bytes.append("\n\x1B\x61\x01", 4);
-  bytes += OemText(footer + "\n\n\n");
+  bytes += OemText(footer + "\n");
+  // POS-80 style cutters sit below the print head. Feed the final text past
+  // the blade before cutting; three blank lines left the footer half cut.
+  bytes.append(8, '\n');
   bytes.append("\x1D\x56\x00", 3);
   DOC_INFO_1W document{};
   document.pDocName = const_cast<LPWSTR>(L"Gour-net comprobante de pedido");

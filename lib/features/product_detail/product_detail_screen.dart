@@ -121,7 +121,9 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
           return SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final landscape = constraints.maxWidth > 900;
+                final landscape =
+                    constraints.maxWidth >= 900 &&
+                    constraints.maxWidth > constraints.maxHeight;
                 final image = _ProductImage(
                   product: product,
                   onBack: () => context.pop(),
@@ -152,7 +154,10 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                 }
                 return Column(
                   children: [
-                    SizedBox(height: constraints.maxHeight * .36, child: image),
+                    SizedBox(
+                      height: (constraints.maxHeight * .28).clamp(190.0, 320.0),
+                      child: image,
+                    ),
                     Expanded(child: details),
                   ],
                 );
@@ -218,168 +223,199 @@ class _ProductOptions extends StatelessWidget {
   final bool editing;
 
   @override
-  Widget build(BuildContext context) => ColoredBox(
-    color: AppColors.surface,
-    child: SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(32, 32, 32, 40),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 720),
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final compact = constraints.maxWidth < 620;
+      final padding = compact ? 20.0 : 32.0;
+      return ColoredBox(
+        color: AppColors.surface,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: product.tags
-                  .map(
-                    (tag) => Chip(
-                      label: Text(tag),
-                      visualDensity: VisualDensity.compact,
-                      backgroundColor: const Color(0xFFEAF8F0),
-                      side: BorderSide.none,
-                      labelStyle: const TextStyle(
-                        color: AppColors.success,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  )
-                  .toList(),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              product.name,
-              style: Theme.of(context).textTheme.displayMedium,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              product.description,
-              style: const TextStyle(
-                fontSize: 17,
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              formatClp(product.price),
-              style: const TextStyle(
-                fontSize: 28,
-                color: AppColors.primary,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            for (final group in product.modifierGroups) ...[
-              const SizedBox(height: 30),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      group.name,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                  ),
-                  Text(
-                    group.required ? 'Obligatorio' : 'Opcional',
-                    style: TextStyle(
-                      color: group.required
-                          ? AppColors.primary
-                          : AppColors.textSecondary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              ...group.options.map((option) {
-                final selected =
-                    selections[group.id]?.contains(option.id) ?? false;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Material(
-                    color: selected
-                        ? const Color(0xFFFFF0F7)
-                        : AppColors.background,
-                    borderRadius: BorderRadius.circular(16),
-                    child: InkWell(
-                      onTap: () => onToggle(group, option),
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 11,
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(padding, padding, padding, 20),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 720),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: product.tags
+                              .map(
+                                (tag) => Chip(
+                                  label: Text(tag),
+                                  visualDensity: VisualDensity.compact,
+                                  backgroundColor: const Color(0xFFEAF8F0),
+                                  side: BorderSide.none,
+                                  labelStyle: const TextStyle(
+                                    color: AppColors.success,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              )
+                              .toList(),
                         ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: selected
-                                ? AppColors.primary
-                                : AppColors.border,
-                            width: selected ? 2 : 1,
+                        const SizedBox(height: 10),
+                        Text(
+                          product.name,
+                          style: Theme.of(context).textTheme.displayMedium,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          product.description,
+                          style: const TextStyle(
+                            fontSize: 17,
+                            color: AppColors.textSecondary,
+                            height: 1.5,
                           ),
                         ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              group.isSingleChoice
-                                  ? (selected
-                                        ? Icons.radio_button_checked
-                                        : Icons.radio_button_off)
-                                  : (selected
-                                        ? Icons.check_box
-                                        : Icons.check_box_outline_blank),
-                              color: selected
-                                  ? AppColors.primary
-                                  : AppColors.textSecondary,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                option.name,
-                                style: const TextStyle(
-                                  fontSize: 16,
+                        const SizedBox(height: 12),
+                        Text(
+                          formatClp(product.price),
+                          style: const TextStyle(
+                            fontSize: 28,
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        for (final group in product.modifierGroups) ...[
+                          const SizedBox(height: 30),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  group.name,
+                                  style: Theme.of(context).textTheme.titleLarge,
+                                ),
+                              ),
+                              Text(
+                                group.required ? 'Obligatorio' : 'Opcional',
+                                style: TextStyle(
+                                  color: group.required
+                                      ? AppColors.primary
+                                      : AppColors.textSecondary,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
-                            ),
-                            if (option.priceAdjustment > 0)
-                              Text(
-                                '+${formatClp(option.priceAdjustment)}',
-                                style: const TextStyle(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w800,
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          ...group.options.map((option) {
+                            final selected =
+                                selections[group.id]?.contains(option.id) ??
+                                false;
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: Material(
+                                color: selected
+                                    ? const Color(0xFFFFF0F7)
+                                    : AppColors.background,
+                                borderRadius: BorderRadius.circular(16),
+                                child: InkWell(
+                                  onTap: () => onToggle(group, option),
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 11,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: selected
+                                            ? AppColors.primary
+                                            : AppColors.border,
+                                        width: selected ? 2 : 1,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          group.isSingleChoice
+                                              ? (selected
+                                                    ? Icons.radio_button_checked
+                                                    : Icons.radio_button_off)
+                                              : (selected
+                                                    ? Icons.check_box
+                                                    : Icons
+                                                          .check_box_outline_blank),
+                                          color: selected
+                                              ? AppColors.primary
+                                              : AppColors.textSecondary,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            option.name,
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
+                                        if (option.priceAdjustment > 0)
+                                          Text(
+                                            '+${formatClp(option.priceAdjustment)}',
+                                            style: const TextStyle(
+                                              color: AppColors.primary,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ),
-                          ],
+                            );
+                          }),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            DecoratedBox(
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: AppColors.border)),
+              ),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(padding, 12, padding, 16),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 720),
+                    child: Row(
+                      children: [
+                        QuantityStepper(
+                          compact: compact,
+                          quantity: quantity,
+                          onDecrease: onDecrease,
+                          onIncrease: onIncrease,
                         ),
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            ],
-            const SizedBox(height: 30),
-            Row(
-              children: [
-                QuantityStepper(
-                  quantity: quantity,
-                  onDecrease: onDecrease,
-                  onIncrease: onIncrease,
-                ),
-                const SizedBox(width: 18),
-                Expanded(
-                  child: ElevatedButton(
-                    key: const Key('add-product-button'),
-                    onPressed: onAdd,
-                    child: Text(
-                      '${editing ? 'GUARDAR' : 'AGREGAR'} • ${formatClp(unitPrice * quantity)}',
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            key: const Key('add-product-button'),
+                            onPressed: onAdd,
+                            child: Text(
+                              '${editing ? 'GUARDAR' : 'AGREGAR'} • ${formatClp(unitPrice * quantity)}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ],
+              ),
             ),
           ],
         ),
-      ),
-    ),
+      );
+    },
   );
 }
