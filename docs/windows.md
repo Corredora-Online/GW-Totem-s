@@ -10,6 +10,14 @@
 
 Las siguientes versiones se reciben mediante Releases, conservando los datos del perfil. Consulta [actualizaciones y firma](updates.md). El instalador Windows aún no lleva firma Authenticode; no desactives protecciones si una política corporativa bloquea su ejecución: solicita a soporte su validación.
 
+Si la versión 1.0.1 muestra `CERTIFICATE_VERIFY_FAILED` al buscar una
+actualización, descarga el Setup de la versión siguiente desde Edge e instálalo
+manualmente en la misma cuenta Windows, con la app cerrada. Esa versión consulta
+las Releases mediante WinHTTP, que usa los certificados y el proxy de Windows.
+Si Windows también rechaza el certificado, comprueba fecha y hora, actualiza los
+certificados raíz mediante Windows Update y pide al administrador de la red que
+revise el proxy o antivirus HTTPS. No desactives la validación de certificados.
+
 ## Estado y requisitos
 
 El mismo proyecto Flutter ya incluye runner Windows, activación por código,
@@ -57,9 +65,10 @@ Para desarrollo rápido, `flutter run -d windows` desde el PC Windows.
    integrado activo**. La app intenta detectar automáticamente el USB PAX
    `VID_2FB8&PID_225E`; si no lo encuentra, ingresa `COM5` (o el puerto real)
    en **Configuración → Operación → Puerto COM del Getnet IM30**.
-3. Instala la impresora térmica en **Impresoras y escáneres**. Ingresa su nombre
-   exacto en **Configuración → Operación → Nombre de la impresora térmica
-   Windows**. La app no envía comprobantes a la impresora predeterminada para
+3. Instala la impresora térmica en **Impresoras y escáneres**. En
+   **Configuración → Operación**, elígela de **Impresoras instaladas en Windows**,
+   pulsa **Imprimir prueba** y luego **Guardar**. Si no aparece, usa el botón de
+   actualizar o escribe su nombre exacto. La app no envía comprobantes a la impresora predeterminada para
    evitar imprimirlos accidentalmente en una impresora de oficina. El driver
    debe aceptar trabajos **RAW ESC/POS**; la app usa codepage 850 y corte.
 4. Haz una venta de prueba. Comprueba en el POS el mismo número/monto que en el
@@ -77,6 +86,12 @@ implementación Windows y el conjunto PC/driver/IM30 con Getnet antes de uso
 productivo; la prueba anterior en SUNMI/Android no equivale a esa certificación.
 
 ## Bloqueo de Windows
+
+Si aparece una pantalla negra que dice «No hay imágenes en Descargas», es el
+protector de pantalla **Fotos de Windows**, no la pantalla de reposo de Gour-net.
+En la cuenta del kiosco selecciona **Protector de pantalla → Ninguno**. La app
+también bloquea la activación de ese protector mientras el kiosco está activo
+y mantiene encendida la pantalla para mostrar su video de espera.
 
 La app se pone a pantalla completa después de la activación, pero **una ventana
 fullscreen no bloquea Windows**. Para un tótem público se recomienda una cuenta

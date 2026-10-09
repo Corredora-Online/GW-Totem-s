@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 
 class AppRelease {
@@ -71,6 +72,26 @@ class ReleaseArtifact {
 
 /// Public Releases only. Never sends Gour-net credentials or a GitHub token.
 class ReleaseUpdater {
+  static const _windowsChannel = MethodChannel('cl.gournet.kiosk/updates');
+
+  Future<(int, List<int>)> _windowsGet(
+    Uri uri, {
+    String? path,
+    required int maxBytes,
+  }) async {
+    final response = await _windowsChannel.invokeMapMethod<String, dynamic>(
+      'fetchUpdate',
+      {'url': uri.toString(), 'path': path ?? '', 'maxBytes': maxBytes},
+    );
+    if (response == null || response['status'] is! int) {
+      throw const FormatException('Respuesta de descarga inválida');
+    }
+    return (
+      response['status'] as int,
+      response['bytes'] as Uint8List? ?? <int>[],
+    );
+  }
+
   Future<HttpClientResponse> _get(HttpClient client, Uri uri) async {
     for (var redirects = 0; redirects < 6; redirects++) {
       if (uri.scheme != 'https' ||
@@ -103,6 +124,19 @@ class ReleaseUpdater {
   }
 
   Future<ReleaseArtifact?> check(String platform) async {
+    if (Platform.isWindows) {
+      final (status, bytes) = await _windowsGet(
+        Uri.parse('${AppRelease.base}/latest/download/update-manifest.json'),
+        maxBytes: 65536,
+      );
+      if (status == 404) return null;
+      if (status != 200) throw HttpException('Actualizaciones: HTTP $status');
+      return ReleaseArtifact.parse(
+        jsonDecode(utf8.decode(bytes)) as Map<String, dynamic>,
+        platform,
+        AppRelease.build,
+      );
+    }
     final client = HttpClient()
       ..connectionTimeout = const Duration(seconds: 25);
     try {
@@ -143,6 +177,22 @@ class ReleaseUpdater {
     final file = File('${directory.path}/${artifact.build}-${artifact.name}');
     if (await verified(file, artifact)) return file;
     final partial = File('${file.path}.partial');
+    if (Platform.isWindows) {
+      try {
+        final (status, _) = await _windowsGet(
+          artifact.uri,
+          path: partial.path,
+          maxBytes: artifact.size,
+        );
+        if (status != 200) throw HttpException('Descarga: HTTP $status');
+        if (!await verified(partial, artifact)) {
+          throw const FormatException('La descarga no pasó la verificación SHA-256');
+        }
+        return await partial.rename(file.path);
+      } finally {
+        if (await partial.exists()) await partial.delete();
+      }
+    }
     final client = HttpClient()
       ..connectionTimeout = const Duration(seconds: 25);
     IOSink? sink;

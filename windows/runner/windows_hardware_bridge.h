@@ -57,6 +57,7 @@ class WindowsHardwareBridge {
   std::atomic<HANDLE> active_port_{INVALID_HANDLE_VALUE};
   std::mutex write_mutex_;
   std::thread sale_worker_;
+  std::thread update_worker_;
 
   std::mutex callbacks_mutex_;
   std::vector<std::function<void()>> callbacks_;
