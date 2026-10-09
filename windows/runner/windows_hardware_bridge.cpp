@@ -1,4 +1,5 @@
 #include "windows_hardware_bridge.h"
+#include "windows_update_http.h"
 
 #include <flutter/standard_method_codec.h>
 #include <devguid.h>
@@ -14,6 +15,7 @@
 #include <cwctype>
 #include <deque>
 #include <sstream>
+#include <stdexcept>
 #include <utility>
 
 namespace {
@@ -46,6 +48,43 @@ std::wstring Wide(const std::string& utf8) {
   MultiByteToWideChar(CP_UTF8, 0, utf8.data(), static_cast<int>(utf8.size()),
                       value.data(), size);
   return value;
+}
+
+std::string Utf8(const std::wstring& wide) {
+  if (wide.empty()) return {};
+  const int size = WideCharToMultiByte(CP_UTF8, 0, wide.data(),
+                                      static_cast<int>(wide.size()), nullptr, 0,
+                                      nullptr, nullptr);
+  if (size <= 0) return {};
+  std::string value(static_cast<size_t>(size), '\0');
+  WideCharToMultiByte(CP_UTF8, 0, wide.data(), static_cast<int>(wide.size()),
+                      value.data(), size, nullptr, nullptr);
+  return value;
+}
+
+flutter::EncodableList InstalledPrinters() {
+  DWORD needed = 0;
+  DWORD returned = 0;
+  const DWORD flags = PRINTER_ENUM_LOCAL | PRINTER_ENUM_CONNECTIONS;
+  EnumPrintersW(flags, nullptr, 4, nullptr, 0, &needed, &returned);
+  flutter::EncodableList names;
+  if (needed == 0) return names;
+  std::vector<BYTE> buffer(needed);
+  if (!EnumPrintersW(flags, nullptr, 4, buffer.data(), needed, &needed,
+                     &returned)) {
+    throw std::runtime_error("Windows no pudo enumerar las impresoras.");
+  }
+  const auto* printers = reinterpret_cast<const PRINTER_INFO_4W*>(buffer.data());
+  std::vector<std::string> sorted;
+  for (DWORD index = 0; index < returned; ++index) {
+    if (printers[index].pPrinterName) {
+      sorted.push_back(Utf8(printers[index].pPrinterName));
+    }
+  }
+  std::sort(sorted.begin(), sorted.end());
+  sorted.erase(std::unique(sorted.begin(), sorted.end()), sorted.end());
+  for (const auto& name : sorted) names.emplace_back(name);
+  return names;
 }
 
 std::string OemText(const std::string& utf8) {
@@ -251,6 +290,7 @@ WindowsHardwareBridge::WindowsHardwareBridge(flutter::FlutterEngine* engine,
 WindowsHardwareBridge::~WindowsHardwareBridge() {
   stopping_ = true;
   if (sale_worker_.joinable()) sale_worker_.join();
+  if (update_worker_.joinable()) update_worker_.join();
 }
 
 void WindowsHardwareBridge::PostUi(std::function<void()> callback) {
@@ -276,6 +316,42 @@ void WindowsHardwareBridge::RegisterChannels(flutter::FlutterEngine* engine) {
       engine->messenger(), "cl.gournet.kiosk/updates", codec);
   update_channel_->SetMethodCallHandler(
       [this](const flutter::MethodCall<Value>& call, std::unique_ptr<Result> result) {
+        if (call.method_name() == "fetchUpdate") {
+          const std::string url = Argument(call.arguments(), "url");
+          const std::string path = Argument(call.arguments(), "path");
+          const auto* args = call.arguments()
+              ? std::get_if<Map>(call.arguments()) : nullptr;
+          int64_t max_bytes = 0;
+          if (args) {
+            const auto size_arg = args->find(Value("maxBytes"));
+            if (size_arg != args->end()) {
+              if (const auto* small = std::get_if<int32_t>(&size_arg->second)) max_bytes = *small;
+              if (const auto* large = std::get_if<int64_t>(&size_arg->second)) max_bytes = *large;
+            }
+          }
+          if (url.empty() || max_bytes < 1) {
+            result->Error("INVALID_UPDATE", "URL o tamaño de descarga inválido");
+            return;
+          }
+          if (update_worker_.joinable()) update_worker_.join();
+          std::shared_ptr<Result> pending(std::move(result));
+          update_worker_ = std::thread([this, url, path, max_bytes, pending]() {
+            try {
+              auto response = FetchUpdate(url, path, max_bytes);
+              PostUi([pending, response = std::move(response)]() mutable {
+                pending->Success(Value(Map{
+                    {Value("status"), Value(response.status)},
+                    {Value("bytes"), Value(std::move(response.bytes))}}));
+              });
+            } catch (const std::exception& error) {
+              const std::string message(error.what());
+              PostUi([pending, message]() {
+                pending->Error("WINDOWS_HTTPS", message);
+              });
+            }
+          });
+          return;
+        }
         if (call.method_name() != "installUpdate") { result->NotImplemented(); return; }
         if (sale_active_) { result->Error("PAYMENT_ACTIVE", "Hay un pago activo"); return; }
         wchar_t module[MAX_PATH]{};
@@ -347,7 +423,13 @@ void WindowsHardwareBridge::RegisterChannels(flutter::FlutterEngine* engine) {
   printer_channel_->SetMethodCallHandler(
       [](const flutter::MethodCall<Value>& call,
          std::unique_ptr<Result> result) {
-        if (call.method_name() == "printReceipt") {
+        if (call.method_name() == "listPrinters") {
+          try {
+            result->Success(Value(InstalledPrinters()));
+          } catch (const std::exception& error) {
+            result->Error("PRINTER_LIST_FAILED", error.what());
+          }
+        } else if (call.method_name() == "printReceipt") {
           result->Success(Value(PrintReceipt(call.arguments())));
         } else {
           result->NotImplemented();

@@ -65,6 +65,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _showApiKey = false;
   String? _branchError;
   KioskStatus? _kioskStatus;
+  List<String> _windowsPrinters = const [];
+  bool _loadingPrinters = false;
+  bool _testingPrinter = false;
+  static const _printerChannel = MethodChannel('cl.gournet.kiosk/printer');
 
   @override
   void initState() {
@@ -116,6 +120,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadBranches();
       _refreshKioskStatus();
+      if (Platform.isWindows) _loadWindowsPrinters();
     });
   }
 
@@ -284,6 +289,53 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         backgroundColor: error ? AppColors.error : AppColors.success,
       ),
     );
+  }
+
+  Future<void> _loadWindowsPrinters() async {
+    setState(() => _loadingPrinters = true);
+    try {
+      final names = await _printerChannel.invokeListMethod<String>(
+        'listPrinters',
+      );
+      if (mounted) setState(() => _windowsPrinters = names ?? const []);
+    } on PlatformException catch (error) {
+      if (mounted) {
+        _message('No se pudieron listar impresoras: ${error.message}', error: true);
+      }
+    } finally {
+      if (mounted) setState(() => _loadingPrinters = false);
+    }
+  }
+
+  Future<void> _testWindowsPrinter() async {
+    final name = _windowsPrinterName.text.trim();
+    if (name.isEmpty) {
+      _message('Selecciona una impresora antes de probar.', error: true);
+      return;
+    }
+    setState(() => _testingPrinter = true);
+    try {
+      final result = await _printerChannel.invokeMapMethod<String, dynamic>(
+        'printReceipt',
+        {
+          'printerName': name,
+          'header': 'GOUR-NET',
+          'orderNumber': 'PRUEBA',
+          'body': 'Prueba de impresora Windows\nSin venta ni cobro\n',
+          'footer': 'Comprueba que salio este papel',
+        },
+      );
+      if (mounted) {
+        _message(
+          result?['message']?.toString() ?? 'Sin respuesta de la impresora.',
+          error: result?['success'] != true,
+        );
+      }
+    } on PlatformException catch (error) {
+      if (mounted) _message(error.message ?? error.code, error: true);
+    } finally {
+      if (mounted) setState(() => _testingPrinter = false);
+    }
   }
 
   Future<void> _refreshKioskStatus() async {
@@ -727,11 +779,46 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             _field(
               _windowsPrinterName,
               'Nombre de la impresora térmica Windows',
-              hint: 'Nombre exacto de Impresoras y escáneres',
+              hint: 'Selecciona una impresora instalada o escribe su nombre exacto',
               required: false,
             ),
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    isExpanded: true,
+                    value: _windowsPrinters.contains(_windowsPrinterName.text)
+                        ? _windowsPrinterName.text
+                        : null,
+                    decoration: const InputDecoration(
+                      labelText: 'Impresoras instaladas en Windows',
+                    ),
+                    items: _windowsPrinters
+                        .map((name) => DropdownMenuItem(value: name, child: Text(name)))
+                        .toList(),
+                    onChanged: _windowsPrinters.isEmpty
+                        ? null
+                        : (name) {
+                            setState(() => _windowsPrinterName.text = name ?? '');
+                          },
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Actualizar impresoras',
+                  onPressed: _loadingPrinters ? null : _loadWindowsPrinters,
+                  icon: const Icon(Icons.refresh_rounded),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: _testingPrinter ? null : _testWindowsPrinter,
+              icon: const Icon(Icons.print_rounded),
+              label: const Text('Imprimir prueba'),
+            ),
             const Text(
-              'La impresora debe admitir comandos ESC/POS. El pago real exige que el IM30 aparezca como puerto COM en Windows.',
+              'Guarda la configuración después de seleccionar la impresora. '
+              'La prueba no inicia una venta. La impresora debe admitir ESC/POS.',
               style: TextStyle(color: AppColors.textSecondary),
             ),
           ],
