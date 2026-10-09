@@ -1,0 +1,18 @@
+name: Publish v1.0.3
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+  actions: write
+jobs:
+  publish:
+    if: contains(github.event.head_commit.message, 'Publish v1.0.3 installer')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create release and dispatch signed builds
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create v1.0.3 --repo "${GITHUB_REPOSITORY}" --target "${GITHUB_SHA}" --title "Gour-net Kiosk 1.0.3 — interfaz y comprobantes Windows" --notes "Escala de interfaz adaptable al tamaño de la pantalla Windows; detalle de producto vertical más legible y acción de compra visible; avance de papel adicional antes del corte del comprobante."
+          gh workflow run release.yml --repo "${GITHUB_REPOSITORY}" --ref main -f tag=v1.0.3
