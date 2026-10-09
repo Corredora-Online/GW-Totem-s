@@ -325,7 +325,7 @@ void WindowsHardwareBridge::RegisterChannels(flutter::FlutterEngine* engine) {
           if (args) {
             const auto size_arg = args->find(Value("maxBytes"));
             if (size_arg != args->end()) {
-              if (const auto* small = std::get_if<int32_t>(&size_arg->second)) max_bytes = *small;
+              if (const auto* size32 = std::get_if<int32_t>(&size_arg->second)) max_bytes = *size32;
               if (const auto* large = std::get_if<int64_t>(&size_arg->second)) max_bytes = *large;
             }
           }
@@ -464,6 +464,7 @@ void WindowsHardwareBridge::RegisterChannels(flutter::FlutterEngine* engine) {
 void WindowsHardwareBridge::SetFullscreen(bool enabled) {
   if (enabled == kiosk_enabled_) return;
   if (enabled) {
+    SetThreadExecutionState(ES_CONTINUOUS | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED);
     original_style_ = static_cast<DWORD>(GetWindowLongPtrW(window_, GWL_STYLE));
     GetWindowRect(window_, &original_rect_);
     MONITORINFO monitor{};
@@ -476,6 +477,7 @@ void WindowsHardwareBridge::SetFullscreen(bool enabled) {
                  SWP_FRAMECHANGED | SWP_SHOWWINDOW);
     kiosk_enabled_ = true;
   } else {
+    SetThreadExecutionState(ES_CONTINUOUS);
     kiosk_enabled_ = false;
     SetWindowLongPtrW(window_, GWL_STYLE, original_style_);
     SetWindowPos(window_, HWND_NOTOPMOST, original_rect_.left,

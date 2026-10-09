@@ -65,6 +65,11 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
     return 0;
   }
   if (hardware_bridge_ && hardware_bridge_->kiosk_enabled()) {
+    // Keep Windows Photos screen saver and display sleep from covering the
+    // app's own standby video while the kiosk account is active.
+    if (message == WM_SYSCOMMAND &&
+        ((wparam & 0xFFF0) == SC_SCREENSAVE ||
+         (wparam & 0xFFF0) == SC_MONITORPOWER)) return 0;
     if (message == WM_CLOSE ||
         (message == WM_SYSCOMMAND && (wparam & 0xFFF0) == SC_CLOSE)) return 0;
   }

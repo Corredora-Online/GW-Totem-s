@@ -87,6 +87,12 @@ productivo; la prueba anterior en SUNMI/Android no equivale a esa certificación
 
 ## Bloqueo de Windows
 
+Si aparece una pantalla negra que dice «No hay imágenes en Descargas», es el
+protector de pantalla **Fotos de Windows**, no la pantalla de reposo de Gour-net.
+En la cuenta del kiosco selecciona **Protector de pantalla → Ninguno**. La app
+también bloquea la activación de ese protector mientras el kiosco está activo
+y mantiene encendida la pantalla para mostrar su video de espera.
+
 La app se pone a pantalla completa después de la activación, pero **una ventana
 fullscreen no bloquea Windows**. Para un tótem público se recomienda una cuenta
 local estándar separada y **Shell Launcher** en Windows Enterprise, Education o
