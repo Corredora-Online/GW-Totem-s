@@ -34,8 +34,6 @@ class MainActivity : FlutterActivity() {
     private val kioskLogTag = "GournetKiosk"
     private val usbPermissionAction = "cl.gournet.kiosk.USB_PRINTER_PERMISSION"
     private val getnetUsbPermissionAction = "cl.gournet.kiosk.USB_GETNET_PERMISSION"
-    private val usbPrinterVendorId = 0x0483
-    private val usbPrinterProductId = 0x7540
 
     private var printerService: SunmiPrinterService? = null
     private var printerBound = false
@@ -521,9 +519,21 @@ class MainActivity : FlutterActivity() {
         usbManager.requestPermission(device, intent)
     }
 
-    private fun findUsbPrinter(): UsbDevice? = usbManager.deviceList.values.firstOrNull {
-        it.vendorId == usbPrinterVendorId && it.productId == usbPrinterProductId
-    }
+    private fun usbPrinterDevices(): List<UsbDevice> = usbManager.deviceList.values
+        .filter { device ->
+            (0 until device.interfaceCount).any { index ->
+                val printer = device.getInterface(index)
+                printer.interfaceClass == UsbConstants.USB_CLASS_PRINTER &&
+                    (0 until printer.endpointCount).any { endpointIndex ->
+                        val endpoint = printer.getEndpoint(endpointIndex)
+                        endpoint.direction == UsbConstants.USB_DIR_OUT &&
+                            endpoint.type == UsbConstants.USB_ENDPOINT_XFER_BULK
+                    }
+            }
+        }
+        .sortedBy { it.deviceName }
+
+    private fun findUsbPrinter(): UsbDevice? = usbPrinterDevices().singleOrNull()
 
     private fun bindPrinterService() {
         try {
@@ -545,7 +555,12 @@ class MainActivity : FlutterActivity() {
             footer = arguments?.get("footer") as? String ?: "",
             result = result,
         )
-        val usbDevice = findUsbPrinter()
+        val usbPrinters = usbPrinterDevices()
+        if (usbPrinters.size > 1) {
+            complete(result, false, "Se detectaron varias impresoras USB; desconecta las que no se usarán")
+            return
+        }
+        val usbDevice = usbPrinters.singleOrNull()
         if (usbDevice != null) {
             if (usbManager.hasPermission(usbDevice)) {
                 printUsbReceipt(usbDevice, request)
@@ -652,7 +667,7 @@ class MainActivity : FlutterActivity() {
         val service = printerService
         if (service == null) {
             if (!printerBound) bindPrinterService()
-            complete(request.result, false, "No se detectó la impresora USB del K2")
+            complete(request.result, false, "No se detectó una impresora USB o servicio SUNMI")
             return
         }
         Thread {

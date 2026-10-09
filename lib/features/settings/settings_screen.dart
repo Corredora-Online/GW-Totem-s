@@ -786,8 +786,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
+                    key: ValueKey('${_windowsPrinters.join('|')}:${_windowsPrinterName.text}'),
                     isExpanded: true,
-                    value: _windowsPrinters.contains(_windowsPrinterName.text)
+                    initialValue: _windowsPrinters.contains(_windowsPrinterName.text)
                         ? _windowsPrinterName.text
                         : null,
                     decoration: const InputDecoration(
