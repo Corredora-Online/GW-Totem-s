@@ -60,8 +60,8 @@ class _ProcessingScreenState extends ConsumerState<ProcessingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const labels = [
-      'Pago confirmado',
+    final labels = [
+      widget.order.total == 0 ? 'Pedido sin cobro' : 'Pago confirmado',
       'Pedido registrado',
       'Pedido enviado a Gour-net',
       'Comprobante impreso',

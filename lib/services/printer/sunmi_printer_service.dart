@@ -72,9 +72,11 @@ class SunmiPrinterService implements PrinterService {
       ..writeln('-' * _lineWidth)
       ..writeln(_row('TOTAL', formatClp(order.total)))
       ..writeln('-' * _lineWidth)
-      ..writeln(_center('PAGO GETNET APROBADO'));
+      ..writeln(
+        _center(order.total == 0 ? 'PEDIDO SIN COBRO' : 'PAGO GETNET APROBADO'),
+      );
     final getnet = order.getnetTransaction;
-    if (getnet != null) {
+    if (order.total != 0 && getnet != null) {
       _writeIfPresent(
         buffer,
         'Respuesta',
@@ -90,7 +92,7 @@ class SunmiPrinterService implements PrinterService {
       if (getnet.amount > 0) {
         buffer.writeln(_row('Monto POS', formatClp(getnet.amount)));
       }
-    } else {
+    } else if (order.total != 0) {
       buffer.writeln(_row('Referencia', order.paymentReference));
     }
     buffer

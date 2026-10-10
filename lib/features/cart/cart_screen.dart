@@ -127,7 +127,11 @@ class CartScreen extends ConsumerWidget {
                                 ElevatedButton(
                                   key: const Key('checkout-button'),
                                   onPressed: () => context.go('/checkout'),
-                                  child: const Text('IR A PAGAR'),
+                                  child: Text(
+                                    total == 0
+                                        ? 'CONFIRMAR PEDIDO'
+                                        : 'IR A PAGAR',
+                                  ),
                                 ),
                               ];
                               return compact

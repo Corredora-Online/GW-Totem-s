@@ -128,6 +128,9 @@ class GournetOrderRepository implements OrderRepository {
   }
 
   String _internalNote(Order order) {
+    if (order.total == 0) {
+      return 'Pedido sin cobro (total 0) generado por Gour-net Kiosk $kioskId.';
+    }
     final getnet = order.getnetTransaction;
     if (getnet == null) return 'Pedido generado por Gour-net Kiosk $kioskId.';
     return 'Pedido generado por Gour-net Kiosk $kioskId. '

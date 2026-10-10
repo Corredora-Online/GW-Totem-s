@@ -153,6 +153,51 @@ void main() {
     expect(payload['tipo_entrega'], 'retiro');
   });
 
+  test('marca como sin cobro un pedido de total cero', () {
+    final repository = GournetOrderRepository(
+      apiKey: 'test-api-key',
+      client: MockClient((request) async => http.Response('', 200)),
+    );
+    addTearDown(repository.dispose);
+    const freeProduct = Product(
+      id: '106',
+      sku: 'GYD-L1-048',
+      name: 'Muffin de chocolate',
+      description: '',
+      price: 0,
+      categoryId: 'pasteleria',
+      image: '',
+      available: true,
+      tags: [],
+      modifierGroups: [],
+    );
+    final payload = repository.buildPayload(
+      Order(
+        uuid: _order.uuid,
+        number: 1,
+        type: OrderType.takeAway,
+        items: const [
+          CartItem(
+            id: 'free-line',
+            product: freeProduct,
+            quantity: 1,
+            modifiers: [],
+          ),
+        ],
+        paymentStatus: PaymentStatus.approved,
+        dteStatus: DteStatus.pending,
+        syncStatus: SyncStatus.pending,
+        createdAt: _order.createdAt,
+        paymentReference: '0',
+      ),
+    );
+
+    expect(payload['total'], '0');
+    expect(payload['pago_referencia'], '0');
+    expect(payload['nota_interna'], contains('sin cobro'));
+    expect((payload['productos'] as List).single['precio_unitario'], 0);
+  });
+
   test('envía el TUS alfanumérico de la sucursal', () {
     final repository = GournetOrderRepository(
       apiKey: 'test-api-key',

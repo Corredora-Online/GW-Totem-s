@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../data/local/payment_audit_repository.dart';
+import '../../domain/models/cart_item.dart';
 import '../../domain/models/order.dart';
 import '../app_providers.dart';
 import '../cart/cart_controller.dart';
@@ -55,6 +56,19 @@ class CheckoutController extends StateNotifier<CheckoutState> {
           .read(deviceConfigProvider.notifier)
           .reserveOrderNumber();
       final amount = ref.read(cartTotalProvider);
+      if (amount == 0) {
+        state = const CheckoutState(
+          stage: CheckoutStage.processing,
+          message: 'Registrando pedido sin cobro…',
+        );
+        await _completeOrder(
+          uuid: uuid,
+          orderNumber: orderNumber,
+          items: items,
+          paymentReference: '0',
+        );
+        return;
+      }
       final audit = await _beginAudit(
         transactionId: uuid,
         orderNumber: orderNumber,
@@ -96,24 +110,40 @@ class CheckoutController extends StateNotifier<CheckoutState> {
         );
         return;
       }
-      final order = Order(
+      await _completeOrder(
         uuid: uuid,
-        number: orderNumber,
-        type: ref.read(sessionProvider).orderType ?? OrderType.eatIn,
-        items: List.unmodifiable(items),
-        paymentStatus: PaymentStatus.approved,
-        dteStatus: DteStatus.pending,
-        syncStatus: SyncStatus.pending,
-        createdAt: DateTime.now(),
+        orderNumber: orderNumber,
+        items: items,
         paymentReference: result.authorizationCode,
         getnetTransaction: result.getnetTransaction,
-        status: SaleStatus.paymentApproved,
       );
-      await ref.read(orderRepositoryProvider).save(order);
-      state = CheckoutState(stage: CheckoutStage.approved, order: order);
     } finally {
       _starting = false;
     }
+  }
+
+  Future<void> _completeOrder({
+    required String uuid,
+    required int orderNumber,
+    required List<CartItem> items,
+    required String paymentReference,
+    GetnetTransactionData? getnetTransaction,
+  }) async {
+    final order = Order(
+      uuid: uuid,
+      number: orderNumber,
+      type: ref.read(sessionProvider).orderType ?? OrderType.eatIn,
+      items: List.unmodifiable(items),
+      paymentStatus: PaymentStatus.approved,
+      dteStatus: DteStatus.pending,
+      syncStatus: SyncStatus.pending,
+      createdAt: DateTime.now(),
+      paymentReference: paymentReference,
+      getnetTransaction: getnetTransaction,
+      status: SaleStatus.paymentApproved,
+    );
+    await ref.read(orderRepositoryProvider).save(order);
+    state = CheckoutState(stage: CheckoutStage.approved, order: order);
   }
 
   Future<PaymentAuditBeginResult?> _beginAudit({
