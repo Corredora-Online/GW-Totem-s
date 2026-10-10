@@ -1,7 +1,22 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gournet_kiosk/domain/models/cart_item.dart';
 import 'package:gournet_kiosk/domain/models/order.dart';
+import 'package:gournet_kiosk/domain/models/product.dart';
 import 'package:gournet_kiosk/services/printer/sunmi_printer_service.dart';
+
+const _paidProduct = Product(
+  id: '33',
+  sku: 'PAID-001',
+  name: 'Cappuccino',
+  description: '',
+  price: 2500,
+  categoryId: 'cafeteria',
+  image: '',
+  available: true,
+  tags: [],
+  modifierGroups: [],
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -22,7 +37,14 @@ void main() {
       uuid: '12345678-1234-4234-9234-123456789abc',
       number: 0,
       type: OrderType.eatIn,
-      items: const [],
+      items: const [
+        CartItem(
+          id: 'line-1',
+          product: _paidProduct,
+          quantity: 1,
+          modifiers: [],
+        ),
+      ],
       paymentStatus: PaymentStatus.approved,
       dteStatus: DteStatus.pending,
       syncStatus: SyncStatus.pending,
@@ -44,9 +66,8 @@ void main() {
       ),
     );
 
-    final result = await const SunmiPrinterService(
-      windowsPrinterName: 'POS-80',
-    ).print(order);
+    final result = await const SunmiPrinterService(windowsPrinterName: 'POS-80')
+        .print(order);
 
     expect(result.success, isTrue);
     expect(captured?.method, 'printReceipt');
@@ -64,5 +85,38 @@ void main() {
       arguments['footer'].toString(),
       contains('NO VALIDO COMO DOCUMENTO TRIBUTARIO'),
     );
+  });
+
+  test('el comprobante gratuito no afirma un pago Getnet', () async {
+    MethodCall? captured;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+          captured = call;
+          return <String, dynamic>{'success': true};
+        });
+    addTearDown(
+      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null),
+    );
+    final order = Order(
+      uuid: '12345678-1234-4234-9234-123456789abc',
+      number: 1,
+      type: OrderType.takeAway,
+      items: const [],
+      paymentStatus: PaymentStatus.approved,
+      dteStatus: DteStatus.pending,
+      syncStatus: SyncStatus.pending,
+      createdAt: DateTime(2026, 10, 10, 12),
+      paymentReference: '0',
+    );
+
+    final result = await const SunmiPrinterService().print(order);
+
+    expect(result.success, isTrue);
+    final body = (captured?.arguments as Map<Object?, Object?>)['body']
+        .toString();
+    expect(body, contains('PEDIDO SIN COBRO'));
+    expect(body, isNot(contains('PAGO GETNET')));
+    expect(body, isNot(contains('Referencia')));
   });
 }

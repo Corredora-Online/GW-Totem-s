@@ -103,6 +103,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     final approved = checkout.stage == CheckoutStage.approved;
     final processing = checkout.stage == CheckoutStage.processing;
     final cancelling = checkout.stage == CheckoutStage.cancelling;
+    final freeOrder = total == 0;
     final indicatorOnLeft =
         deviceConfig.paymentTerminalSide == PaymentTerminalSide.left;
     final indicatorAtBottom =
@@ -134,6 +135,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                           child: Icon(
                             approved
                                 ? Icons.check_rounded
+                                : freeOrder
+                                ? Icons.restaurant_menu_rounded
                                 : Icons.contactless_rounded,
                             color: approved
                                 ? AppColors.success
@@ -143,7 +146,13 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                         ),
                         const SizedBox(height: 30),
                         Text(
-                          approved ? '¡Pago aprobado!' : 'Paga con tu tarjeta',
+                          approved
+                              ? freeOrder
+                                    ? '¡Pedido confirmado!'
+                                    : '¡Pago aprobado!'
+                              : freeOrder
+                              ? 'Confirmando tu pedido'
+                              : 'Paga con tu tarjeta',
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.displayMedium,
                         ),
@@ -160,8 +169,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                         ),
                         const SizedBox(height: 28),
                         if (!approved) ...[
-                          const Text(
-                            'Acerca, inserta o desliza tu tarjeta\nen el terminal.',
+                          Text(
+                            freeOrder
+                                ? 'No necesitas usar el terminal de pago.'
+                                : 'Acerca, inserta o desliza tu tarjeta\nen el terminal.',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: AppColors.textSecondary,
@@ -185,7 +196,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                               ),
                               const SizedBox(width: 14),
                               Text(
-                                cancelling
+                                freeOrder
+                                    ? 'Registrando pedido...'
+                                    : cancelling
                                     ? 'Cancelando pago...'
                                     : processing
                                     ? 'Procesando pago...'
@@ -197,19 +210,25 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 26),
-                          OutlinedButton.icon(
-                            key: const Key('cancel-payment-button'),
-                            onPressed: processing ? _requestCancellation : null,
-                            icon: const Icon(Icons.close_rounded),
-                            label: Text(
-                              cancelling ? 'CANCELANDO...' : 'CANCELAR PAGO',
+                          if (!freeOrder) ...[
+                            const SizedBox(height: 26),
+                            OutlinedButton.icon(
+                              key: const Key('cancel-payment-button'),
+                              onPressed: processing
+                                  ? _requestCancellation
+                                  : null,
+                              icon: const Icon(Icons.close_rounded),
+                              label: Text(
+                                cancelling ? 'CANCELANDO...' : 'CANCELAR PAGO',
+                              ),
                             ),
-                          ),
+                          ],
                         ] else
-                          const Text(
-                            'Tu pago fue confirmado correctamente.',
-                            style: TextStyle(
+                          Text(
+                            freeOrder
+                                ? 'Tu pedido fue registrado sin cobro.'
+                                : 'Tu pago fue confirmado correctamente.',
+                            style: const TextStyle(
                               color: AppColors.textSecondary,
                               fontSize: 18,
                             ),
@@ -221,7 +240,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               ),
             ),
           ),
-          if (!approved)
+          if (!approved && !freeOrder)
             Positioned(
               left: indicatorOnLeft ? 10 : null,
               right: indicatorOnLeft ? null : 10,

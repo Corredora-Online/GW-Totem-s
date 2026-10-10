@@ -597,7 +597,7 @@ class _CatalogCheckoutFooter extends ConsumerWidget {
                       disabledForegroundColor: const Color(0xFF777781),
                     ),
                     icon: const Icon(Icons.arrow_forward_rounded, size: 20),
-                    label: const Text('PAGAR'),
+                    label: Text(total == 0 && enabled ? 'PEDIR' : 'PAGAR'),
                   ),
                 ],
               ),
