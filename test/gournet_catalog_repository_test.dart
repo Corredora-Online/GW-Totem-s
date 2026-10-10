@@ -34,10 +34,12 @@ final apiPayload = [
     'nombre': 'Espresso remoto',
     'categoria': 'Cafetería',
     'descripcion': 'Descripción desde la API',
-    'precio_base': '2500',
+    'precio_base': '0',
+    'precio_comercio_virtual': '2500',
+    'publicar_comercio_virtual': 'true',
     'disponibilidad': 'disponible',
     'control_stock': 'true',
-    'stock': '10',
+    'stock': '0',
     'imagen_principal': 'https://images.example/espresso.png',
     'atributos_alimentarios': {'vegano': 'true', 'sin_gluten': 'true'},
     'nivel_picante': 'ninguno',
@@ -50,15 +52,30 @@ final apiPayload = [
   {
     '_ID': '31',
     'sku': 'TEST-001',
-    'nombre': 'Producto sin precio',
+    'nombre': 'Producto gratis',
     'categoria': 'Pruebas',
     'descripcion': '',
-    'precio_base': '0',
+    'precio_base': '7000',
+    'precio_comercio_virtual': '0',
+    'publicar_comercio_virtual': 'true',
     'disponibilidad': 'disponible',
     'control_stock': 'false',
     'stock': '0',
     'imagen_principal': null,
     'orden': '20',
+  },
+  {
+    '_ID': '30',
+    'sku': 'TEST-002',
+    'nombre': 'Producto no publicado',
+    'categoria': 'Pruebas',
+    'precio_base': '8000',
+    'precio_comercio_virtual': '5000',
+    'publicar_comercio_virtual': 'false',
+    'disponibilidad': 'disponible',
+    'control_stock': 'false',
+    'stock': '10',
+    'orden': '30',
   },
 ];
 
@@ -98,13 +115,21 @@ void main() {
 
     expect(catalogRequest.headers['apiKey'], 'test-api-key');
     expect(catalogRequest.url.queryParameters['tus'], '5QQTw5u1K8ed');
-    expect(catalog.products, hasLength(1));
-    expect(catalog.products.single.id, '32');
-    expect(catalog.products.single.name, 'Espresso remoto');
-    expect(catalog.products.single.price, 2500);
-    expect(catalog.products.single.tags, containsAll(['Vegano', 'Sin gluten']));
-    expect(catalog.products.single.image, startsWith(directory.path));
-    expect(catalog.categories.single.id, 'cafeteria');
+    expect(catalog.products, hasLength(2));
+    expect(catalog.products.first.id, '32');
+    expect(catalog.products.first.name, 'Espresso remoto');
+    expect(catalog.products.first.price, 2500);
+    expect(catalog.products.first.available, isTrue);
+    expect(catalog.products.first.tags, containsAll(['Vegano', 'Sin gluten']));
+    expect(catalog.products.first.image, startsWith(directory.path));
+    expect(catalog.products.last.name, 'Producto gratis');
+    expect(catalog.products.last.price, 0);
+    expect(catalog.products.last.available, isTrue);
+    expect(
+      catalog.products.map((item) => item.sku),
+      isNot(contains('TEST-002')),
+    );
+    expect(catalog.categories.map((item) => item.id), contains('cafeteria'));
     expect(
       File('${directory.path}/gournet-catalog-cache.json').existsSync(),
       isTrue,
@@ -153,6 +178,6 @@ void main() {
 
     final catalog = await second.loadCatalog();
 
-    expect(catalog.products.single.name, 'Espresso remoto');
+    expect(catalog.products.first.name, 'Espresso remoto');
   });
 }

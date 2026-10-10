@@ -178,9 +178,11 @@ class GournetCatalogRepository implements CatalogRepository {
     for (final record in records) {
       final sku = _string(record['sku']);
       final fallback = fallbackBySku[sku];
-      final price = _integer(record['precio_base']);
       final name = _string(record['nombre']);
-      if (price <= 0 || name.isEmpty) continue;
+      if (!_boolean(record['publicar_comercio_virtual']) || name.isEmpty) {
+        continue;
+      }
+      final price = _integer(record['precio_comercio_virtual']);
 
       final id = _string(record['_ID']).isNotEmpty
           ? _string(record['_ID'])
@@ -195,11 +197,8 @@ class GournetCatalogRepository implements CatalogRepository {
       if (spicy.isNotEmpty && spicy.toLowerCase() != 'ninguno') {
         tags.add('Picante ${_humanize(spicy).toLowerCase()}');
       }
-      final controlsStock = _boolean(record['control_stock']);
-      final stock = _integer(record['stock']);
       final available =
-          _string(record['disponibilidad']).toLowerCase() == 'disponible' &&
-          (!controlsStock || stock > 0);
+          _string(record['disponibilidad']).toLowerCase() == 'disponible';
 
       mapped.add(
         _OrderedProduct(
