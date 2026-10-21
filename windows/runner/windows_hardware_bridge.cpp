@@ -62,6 +62,52 @@ std::string Utf8(const std::wstring& wide) {
   return value;
 }
 
+// Per-user startup needs no administrator account and preserves the app profile.
+void SetAutoStartEnabled(bool enabled) {
+  constexpr wchar_t run_key[] =
+      L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";
+  constexpr wchar_t value_name[] = L"GournetKiosk";
+  std::wstring command;
+  if (enabled) {
+    std::vector<wchar_t> path(32768);
+    const DWORD length = GetModuleFileNameW(
+        nullptr, path.data(), static_cast<DWORD>(path.size()));
+    if (length == 0 || length >= static_cast<DWORD>(path.size())) {
+      throw std::runtime_error("No se pudo resolver la ruta del totem");
+    }
+    command = L"\"" + std::wstring(path.data(), length) + L"\"";
+  }
+
+  HKEY key = nullptr;
+  LSTATUS status;
+  if (enabled) {
+    status = RegCreateKeyExW(HKEY_CURRENT_USER, run_key, 0, nullptr,
+                            REG_OPTION_NON_VOLATILE, KEY_SET_VALUE,
+                            nullptr, &key, nullptr);
+  } else {
+    status = RegOpenKeyExW(HKEY_CURRENT_USER, run_key, 0, KEY_SET_VALUE, &key);
+    if (status == ERROR_FILE_NOT_FOUND) return;
+  }
+  if (status != ERROR_SUCCESS) {
+    throw std::runtime_error("No se pudo abrir el inicio de Windows: " +
+                             std::to_string(status));
+  }
+  if (enabled) {
+    status = RegSetValueExW(
+        key, value_name, 0, REG_SZ,
+        reinterpret_cast<const BYTE*>(command.c_str()),
+        static_cast<DWORD>((command.size() + 1) * sizeof(wchar_t)));
+  } else {
+    status = RegDeleteValueW(key, value_name);
+    if (status == ERROR_FILE_NOT_FOUND) status = ERROR_SUCCESS;
+  }
+  RegCloseKey(key);
+  if (status != ERROR_SUCCESS) {
+    throw std::runtime_error("No se pudo cambiar el inicio de Windows: " +
+                             std::to_string(status));
+  }
+}
+
 flutter::EncodableList InstalledPrinters() {
   DWORD needed = 0;
   DWORD returned = 0;
@@ -449,6 +495,19 @@ void WindowsHardwareBridge::RegisterChannels(flutter::FlutterEngine* engine) {
               ? std::get_if<bool>(call.arguments()) : nullptr;
           SetFullscreen(enabled && *enabled);
           result->Success(Value(true));
+        } else if (call.method_name() == "setAutoStartEnabled") {
+          const auto* enabled = call.arguments()
+              ? std::get_if<bool>(call.arguments()) : nullptr;
+          if (!enabled) {
+            result->Error("INVALID_AUTO_START", "Falta el estado de inicio automatico");
+            return;
+          }
+          try {
+            SetAutoStartEnabled(*enabled);
+            result->Success(Value(*enabled));
+          } catch (const std::exception& error) {
+            result->Error("AUTO_START_FAILED", error.what());
+          }
         } else if (call.method_name() == "getKioskStatus") {
           result->Success(Value(Map{
               {Value("locked"), Value(kiosk_enabled_)},

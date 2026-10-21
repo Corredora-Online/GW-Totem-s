@@ -55,6 +55,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   late PaymentTerminalSide _paymentTerminalSide;
   late PaymentTerminalVerticalPosition _paymentTerminalVerticalPosition;
   late bool _online;
+  late bool _autoStart;
   late bool _allowEatIn;
   late bool _allowTakeAway;
   late String _branchId;
@@ -113,6 +114,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _paymentTerminalSide = config.paymentTerminalSide;
     _paymentTerminalVerticalPosition = config.paymentTerminalVerticalPosition;
     _online = config.online;
+    _autoStart = config.autoStart;
     _allowEatIn = config.allowEatIn;
     _allowTakeAway = config.allowTakeAway;
     _branchId = config.branchId;
@@ -261,6 +263,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       paymentTerminalVerticalPosition: _paymentTerminalVerticalPosition,
       operatingMode: _operatingMode,
       online: _online,
+      autoStart: _autoStart,
       allowEatIn: _allowEatIn,
       allowTakeAway: _allowTakeAway,
       paymentOutcome: _paymentOutcome,
@@ -300,7 +303,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (mounted) setState(() => _windowsPrinters = names ?? const []);
     } on PlatformException catch (error) {
       if (mounted) {
-        _message('No se pudieron listar impresoras: ${error.message}', error: true);
+        _message(
+          'No se pudieron listar impresoras: ${error.message}',
+          error: true,
+        );
       }
     } finally {
       if (mounted) setState(() => _loadingPrinters = false);
@@ -739,6 +745,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   List<Widget> _operationSettings() => [
     _Section(
+      title: 'Inicio automático',
+      subtitle: 'Abre Gour-net Kiosk al encender el equipo.',
+      icon: Icons.power_settings_new_rounded,
+      child: SwitchListTile.adaptive(
+        key: const Key('auto-start-switch'),
+        value: _autoStart,
+        onChanged: _saving
+            ? null
+            : (value) => setState(() => _autoStart = value),
+        title: const Text('Iniciar el tótem automáticamente'),
+        subtitle: Text(
+          Platform.isWindows
+              ? 'Se abrirá al iniciar sesión con esta cuenta de Windows.'
+              : 'Se abrirá al arrancar Android. El inicio sin intervención '
+                    'requiere un dispositivo administrado.',
+        ),
+      ),
+    ),
+    _Section(
       title: 'Modo del sistema',
       subtitle: 'Parámetros operativos y simuladores de hardware.',
       icon: Icons.settings_suggest_rounded,
@@ -786,21 +811,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    key: ValueKey('${_windowsPrinters.join('|')}:${_windowsPrinterName.text}'),
+                    key: ValueKey(
+                      '${_windowsPrinters.join('|')}:${_windowsPrinterName.text}',
+                    ),
                     isExpanded: true,
-                    initialValue: _windowsPrinters.contains(_windowsPrinterName.text)
+                    initialValue:
+                        _windowsPrinters.contains(_windowsPrinterName.text)
                         ? _windowsPrinterName.text
                         : null,
                     decoration: const InputDecoration(
                       labelText: 'Impresoras instaladas en Windows',
                     ),
                     items: _windowsPrinters
-                        .map((name) => DropdownMenuItem(value: name, child: Text(name)))
+                        .map(
+                          (name) =>
+                              DropdownMenuItem(value: name, child: Text(name)),
+                        )
                         .toList(),
                     onChanged: _windowsPrinters.isEmpty
                         ? null
                         : (name) {
-                            setState(() => _windowsPrinterName.text = name ?? '');
+                            setState(
+                              () => _windowsPrinterName.text = name ?? '',
+                            );
                           },
                   ),
                 ),

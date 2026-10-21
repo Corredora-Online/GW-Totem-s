@@ -18,6 +18,13 @@ Si Windows también rechaza el certificado, comprueba fecha y hora, actualiza lo
 certificados raíz mediante Windows Update y pide al administrador de la red que
 revise el proxy o antivirus HTTPS. No desactives la validación de certificados.
 
+## Inicio automático
+
+El inicio automático viene activo por defecto y se puede cambiar en
+**Configuración → Operación → Inicio automático**, guardando después el cambio.
+Se ejecuta al iniciar sesión con la cuenta del tótem. Consulta el funcionamiento
+y las pruebas de reinicio en [inicio automático](autostart.md).
+
 ## Estado y requisitos
 
 El mismo proyecto Flutter ya incluye runner Windows, activación por código,

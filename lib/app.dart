@@ -12,6 +12,7 @@ import 'core/widgets/idle_guard.dart';
 import 'data/remote/gournet_branches_repository.dart';
 import 'domain/models/branch.dart';
 import 'features/onboarding/onboarding_screen.dart';
+import 'services/kiosk/auto_start_service.dart';
 import 'services/kiosk/kiosk_service.dart';
 import 'state/app_providers.dart';
 import 'state/device_config_controller.dart';
@@ -33,8 +34,15 @@ class _GournetKioskAppState extends ConsumerState<GournetKioskApp> {
     });
   }
 
-  Future<void> _syncKioskMode() =>
-      KioskService.setEnabled(ref.read(deviceConfigProvider).isActivated);
+  Future<void> _syncKioskMode() async {
+    final config = ref.read(deviceConfigProvider);
+    try {
+      await AutoStartService.setEnabled(config.autoStart);
+    } catch (error) {
+      debugPrint('No se pudo sincronizar el inicio automático: $error');
+    }
+    await KioskService.setEnabled(ref.read(deviceConfigProvider).isActivated);
+  }
 
   Future<void> _migrateBranchTus() async {
     final config = ref.read(deviceConfigProvider);

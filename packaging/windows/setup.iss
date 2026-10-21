@@ -30,6 +30,10 @@ Source: "gournet-managed-install.txt"; DestDir: "{app}"; Flags: ignoreversion
 Name: "{autoprograms}\Gour-net Kiosk"; Filename: "{app}\gournet_kiosk.exe"
 Name: "{autodesktop}\Gour-net Kiosk"; Filename: "{app}\gournet_kiosk.exe"
 
+[Registry]
+; The app applies the saved preference. Upgrades must not re-enable a disabled startup.
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: none; ValueName: "GournetKiosk"; Flags: uninsdeletevalue dontcreatekey
+
 [Run]
 Filename: "{app}\gournet_kiosk.exe"; WorkingDir: "{app}"; Flags: nowait
 
