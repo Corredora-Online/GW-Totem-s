@@ -45,6 +45,7 @@ class DeviceConfig {
         PaymentTerminalVerticalPosition.center,
     this.online = true,
     this.autoUpdates = true,
+    this.autoStart = true,
     this.paymentOutcome = MockPaymentOutcome.approved,
     this.printerState = MockPrinterState.ready,
     this.dteOutcome = MockDteOutcome.success,
@@ -79,14 +80,17 @@ class DeviceConfig {
   final String adminPinHash;
   final String catalogVersion;
   final String paymentProvider;
+
   /// Puerto COM del IM30 en Windows. Vacío: autodetección PAX por VID/PID.
   final String windowsGetnetPort;
+
   /// Nombre exacto de la impresora térmica instalada en Windows.
   final String windowsPrinterName;
   final PaymentTerminalSide paymentTerminalSide;
   final PaymentTerminalVerticalPosition paymentTerminalVerticalPosition;
   final bool online;
   final bool autoUpdates;
+  final bool autoStart;
   final MockPaymentOutcome paymentOutcome;
   final MockPrinterState printerState;
   final MockDteOutcome dteOutcome;
@@ -124,6 +128,7 @@ class DeviceConfig {
     PaymentTerminalVerticalPosition? paymentTerminalVerticalPosition,
     bool? online,
     bool? autoUpdates,
+    bool? autoStart,
     MockPaymentOutcome? paymentOutcome,
     MockPrinterState? printerState,
     MockDteOutcome? dteOutcome,
@@ -158,6 +163,7 @@ class DeviceConfig {
         paymentTerminalVerticalPosition ?? this.paymentTerminalVerticalPosition,
     online: online ?? this.online,
     autoUpdates: autoUpdates ?? this.autoUpdates,
+    autoStart: autoStart ?? this.autoStart,
     paymentOutcome: paymentOutcome ?? this.paymentOutcome,
     printerState: printerState ?? this.printerState,
     dteOutcome: dteOutcome ?? this.dteOutcome,
@@ -191,6 +197,7 @@ class DeviceConfig {
     'paymentTerminalVerticalPosition': paymentTerminalVerticalPosition.name,
     'online': online,
     'autoUpdates': autoUpdates,
+    'autoStart': autoStart,
     'paymentOutcome': paymentOutcome.name,
     'printerState': printerState.name,
     'dteOutcome': dteOutcome.name,
@@ -226,6 +233,7 @@ class DeviceConfig {
 
     return DeviceConfig(
       autoUpdates: json['autoUpdates'] as bool? ?? true,
+      autoStart: json['autoStart'] as bool? ?? defaults.autoStart,
       deviceId: text('deviceId', defaults.deviceId),
       kioskId: text('kioskId', defaults.kioskId),
       branchId: text('branchId', defaults.branchId),
@@ -271,10 +279,8 @@ class DeviceConfig {
       adminPinHash: adminPinHash,
       catalogVersion: text('catalogVersion', defaults.catalogVersion),
       paymentProvider: text('paymentProvider', defaults.paymentProvider),
-      windowsGetnetPort:
-          json['windowsGetnetPort']?.toString().trim() ?? '',
-      windowsPrinterName:
-          json['windowsPrinterName']?.toString().trim() ?? '',
+      windowsGetnetPort: json['windowsGetnetPort']?.toString().trim() ?? '',
+      windowsPrinterName: json['windowsPrinterName']?.toString().trim() ?? '',
       paymentTerminalSide: enumValue(
         PaymentTerminalSide.values,
         json['paymentTerminalSide'],

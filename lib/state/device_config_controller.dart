@@ -6,6 +6,7 @@ import '../core/security/admin_pin.dart';
 import '../data/local/local_config_repository.dart';
 import '../domain/models/device_config.dart';
 import '../domain/repositories/config_repository.dart';
+import '../services/kiosk/auto_start_service.dart';
 
 final configRepositoryProvider = Provider<ConfigRepository>(
   (ref) => LocalConfigRepository(),
@@ -24,10 +25,15 @@ class DeviceConfigController extends StateNotifier<DeviceConfig> {
   Future<void> replace(DeviceConfig value) async {
     final previous = state;
     state = value;
+    final startupChanged = previous.autoStart != value.autoStart;
     try {
+      if (startupChanged) await AutoStartService.setEnabled(value.autoStart);
       await _repository.save(value);
     } catch (_) {
       state = previous;
+      if (startupChanged) {
+        await _restoreAutoStart(previous.autoStart);
+      }
       rethrow;
     }
   }
@@ -64,10 +70,23 @@ class DeviceConfigController extends StateNotifier<DeviceConfig> {
       pinHash: AdminPin.hash(AdminPin.defaultPin),
     );
     try {
+      if (previous.autoStart != state.autoStart) {
+        await AutoStartService.setEnabled(state.autoStart);
+      }
       await _repository.factoryReset();
     } catch (_) {
+      final startupChanged = previous.autoStart != state.autoStart;
       state = previous;
+      if (startupChanged) await _restoreAutoStart(previous.autoStart);
       rethrow;
+    }
+  }
+
+  Future<void> _restoreAutoStart(bool enabled) async {
+    try {
+      await AutoStartService.setEnabled(enabled);
+    } catch (_) {
+      // The saved preference is reapplied at the next launch.
     }
   }
 }

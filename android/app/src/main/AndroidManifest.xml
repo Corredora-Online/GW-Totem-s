@@ -36,12 +36,20 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+        </activity>
+        <!-- Separate HOME entry lets the startup preference disable boot launch
+             without disabling the app's normal launcher icon. -->
+        <activity-alias
+            android:name=".KioskHome"
+            android:targetActivity=".MainActivity"
+            android:enabled="true"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.HOME" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
-        </activity>
+        </activity-alias>
         <receiver
             android:name=".KioskDeviceAdminReceiver"
             android:description="@string/kiosk_admin_description"

@@ -155,6 +155,8 @@ class MainActivity : FlutterActivity() {
                 else UpdateInstaller.install(this, call.argument<String>("path"), result)
             }
         kioskEnabled = kioskPreferences.getBoolean("enabled", false)
+        runCatching { AutoStartManager.synchronize(this) }
+            .onFailure { Log.e(kioskLogTag, "No se pudo sincronizar el inicio automático", it) }
         registerUsbReceiver()
         registerGetnetUsbReceiver()
         prepareUsbPrinter()
@@ -171,6 +173,19 @@ class MainActivity : FlutterActivity() {
                 when (call.method) {
                     "getKioskStatus" -> result.success(kioskStatus())
                     "setKioskEnabled" -> setKioskEnabled(call.arguments == true, result)
+                    "setAutoStartEnabled" -> {
+                        val enabled = call.arguments as? Boolean
+                        if (enabled == null) {
+                            result.error("INVALID_AUTO_START", "Falta el estado de inicio automático", null)
+                        } else {
+                            try {
+                                AutoStartManager.setEnabled(this, enabled)
+                                result.success(enabled)
+                            } catch (error: Exception) {
+                                result.error("AUTO_START_FAILED", error.message, null)
+                            }
+                        }
+                    }
                     "exitKiosk" -> exitKiosk(result)
                     else -> result.notImplemented()
                 }
@@ -253,7 +268,8 @@ class MainActivity : FlutterActivity() {
                 Log.e(kioskLogTag, "No se pudo aplicar la restricción $restriction", it)
             }
         }
-        setAsManagedHome()
+        runCatching { AutoStartManager.synchronize(this) }
+            .onFailure { Log.e(kioskLogTag, "No se pudo fijar el inicio automático", it) }
 
         if (devicePolicyManager.isLockTaskPermitted(packageName) &&
             activityManager.lockTaskModeState == ActivityManager.LOCK_TASK_MODE_NONE
@@ -264,21 +280,13 @@ class MainActivity : FlutterActivity() {
         Log.i(kioskLogTag, "Modo kiosco activo owner=true")
     }
 
-    private fun setAsManagedHome() {
-        val filter = IntentFilter(Intent.ACTION_MAIN).apply {
-            addCategory(Intent.CATEGORY_HOME)
-            addCategory(Intent.CATEGORY_DEFAULT)
-        }
-        runCatching {
-            devicePolicyManager.addPersistentPreferredActivity(
-                adminComponent,
-                filter,
-                ComponentName(this, MainActivity::class.java),
-            )
-        }.onFailure { Log.e(kioskLogTag, "No se pudo fijar el launcher administrado", it) }
-    }
-
     private fun exitKiosk(result: MethodChannel.Result) {
+        try {
+            AutoStartManager.pauseForMaintenance(this)
+        } catch (error: Exception) {
+            result.error("KIOSK_EXIT_FAILED", error.message, null)
+            return
+        }
         kioskExitRequested = true
         deactivateKioskMode()
         result.success(true)
@@ -293,12 +301,6 @@ class MainActivity : FlutterActivity() {
                 .onFailure { Log.e(kioskLogTag, "No se pudo detener LockTask", it) }
         }
         if (devicePolicyManager.isDeviceOwnerApp(packageName)) {
-            runCatching {
-                devicePolicyManager.clearPackagePersistentPreferredActivities(
-                    adminComponent,
-                    packageName,
-                )
-            }.onFailure { Log.e(kioskLogTag, "No se pudo restaurar el launcher", it) }
             kioskRestrictions.forEach { restriction ->
                 runCatching {
                     devicePolicyManager.clearUserRestriction(adminComponent, restriction)
